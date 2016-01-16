@@ -3,6 +3,7 @@
 ;; Copyright (C) 2013  Tobias.Zawada
 
 ;; Author: Tobias.Zawada <i@tn-home.de>
+;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is not part of GNU Emacs.
 
