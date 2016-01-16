@@ -41,6 +41,8 @@
 ;;
 ;;; Code:
 
+(require 'cl-lib)
+
 (defface html-check-frag-error-face
   '((default (:foreground "red")))
   "Overlay properties for errorneous html tags."
@@ -230,11 +232,11 @@ the (almost) the same meaning as for
 		  (when html-check-frag-debug
 		    (push (append (list 'after-open :stack-close stack-close) (when stack-open (list :stack-open stack-open))) html-check-frag-debug))
 		  (when stack-open
-		    (loop for tag in stack-open do
-			  (when html-check-frag-debug
-			    (push (list 'missing :tag tag) html-check-frag-debug))
-			  (deco-err 'missing tag)
-			  ))
+		    (cl-loop for tag in stack-open do
+			     (when html-check-frag-debug
+			       (push (list 'missing :tag tag) html-check-frag-debug))
+			     (deco-err 'missing tag)
+			     ))
 		  (when stack-close
 		    (setq stack-close (nreverse stack-close))
 		    (goto-char b)
@@ -298,9 +300,9 @@ Search starts from point."
 		(goto-char (point-min))
 		(setq wrapped t))
 	      (null (and wrapped (= (point) old-point))))
-	    (null (loop for ol in (overlays-at (point))
-			thereis (and (eq (overlay-get ol 'face) 'html-check-frag-error-face)
-				     (goto-char (overlay-end ol)))))))))
+	    (null (cl-loop for ol in (overlays-at (point))
+			   thereis (and (eq (overlay-get ol 'face) 'html-check-frag-error-face)
+					(goto-char (overlay-end ol)))))))))
 
 (defvar html-check-frag-lighter-map)
 (setq html-check-frag-lighter-map (make-sparse-keymap))
