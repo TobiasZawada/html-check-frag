@@ -60,7 +60,7 @@ You should look at (reverse html-check-frag-debug).")
   "Void tags not needed to be marked as <.../>.
 Note, everything should be lower case here. Even !DOCTYPE should actually be !doctpype in this list.")
 
-(defun html-invalid-context-p (&optional pos)
+(defun html-check-frag-invalid-context-p (&optional pos)
   "Return non-nil if point is inside string comment or the character at point is quoted."
   (save-excursion
     (save-match-data
@@ -70,7 +70,7 @@ Note, everything should be lower case here. Even !DOCTYPE should actually be !do
 	    (nth 5 parserState))) ;; ?< is quoted
       )))
 
-(defun html-search-for-tag (&optional bound noerror backward)
+(defun html-check-frag-search-for-tag (&optional bound noerror backward)
   "Starting at point search for tag.
 If point is in the middle of a tag try to find the beginning of
 the tag (it throws `error-html-tag' on failure).  Afterwards
@@ -79,7 +79,7 @@ characters and strings are ignored. BOUND and NOERROR have
 the (almost) the same meaning as for
 `search-forward'. BACKWARD determines the search direction."
   (interactive)
-  (declare (special html-search-for-tag-syntax))
+  (declare (special html-check-frag-search-for-tag-syntax))
   (when html-check-frag-debug
     (push (list 'search :args (list bound noerror backward) :point (point)) html-check-frag-debug))
   (let (type
@@ -95,16 +95,16 @@ the (almost) the same meaning as for
 	value ;; temporary
 	(re "\\(?:<\\(/\\)?\\([[:alpha:]!?][[:alnum:]]*\\)\\|\\(>\\)\\)")
 	)
-    (with-syntax-table (or (and (boundp 'html-search-for-tag-syntax) (syntax-table-p html-search-for-tag-syntax) html-search-for-tag-syntax)
-			   (prog1 
-			       (setq-local html-search-for-tag-syntax (copy-syntax-table))
-			     (modify-syntax-entry ?< "(>" html-search-for-tag-syntax)
-			     (modify-syntax-entry ?> ")<" html-search-for-tag-syntax)
-			     (modify-syntax-entry ?= "." html-search-for-tag-syntax) ;; for parsing attributes
+    (with-syntax-table (or (and (boundp 'html-check-frag-search-for-tag-syntax) (syntax-table-p html-check-frag-search-for-tag-syntax) html-check-frag-search-for-tag-syntax)
+			   (prog1
+			       (setq-local html-check-frag-search-for-tag-syntax (copy-syntax-table))
+			     (modify-syntax-entry ?< "(>" html-check-frag-search-for-tag-syntax)
+			     (modify-syntax-entry ?> ")<" html-check-frag-search-for-tag-syntax)
+			     (modify-syntax-entry ?= "." html-check-frag-search-for-tag-syntax) ;; for parsing attributes
 			     ))
       (while (and (setq beg (apply (if backward 're-search-backward 're-search-forward) (list re bound noerror)))
 		  (setq beg (match-beginning 0))
-		  (html-invalid-context-p beg)))
+		  (html-check-frag-invalid-context-p beg)))
       (when (and beg (match-beginning 3));; point is actually in the middle of a tag
 	(goto-char (match-end 3))
 	(condition-case err
@@ -204,8 +204,8 @@ the (almost) the same meaning as for
 	    (goto-char b)
 	    (condition-case scan-err
 		(progn
-		  (while (or (and (<= (point) e) (setq tag (html-search-for-tag e 'noErr)))
-			     (and stack-open (setq tag (html-search-for-tag nil 'noErr))))
+		  (while (or (and (<= (point) e) (setq tag (html-check-frag-search-for-tag e 'noErr)))
+			     (and stack-open (setq tag (html-check-frag-search-for-tag nil 'noErr))))
 		    (when html-check-frag-debug
 		      (push (list 'found-tag :tag tag :stack-open stack-open :stack-close stack-close) html-check-frag-debug))
 		    (when (< (plist-get tag :beg) b)
@@ -241,7 +241,7 @@ the (almost) the same meaning as for
 		    (setq stack-close (nreverse stack-close))
 		    (goto-char b)
 		    (while (and stack-close ;; trying to reduce stack-close
-				(setq tag (html-search-for-tag nil 'noErr 'back)))
+				(setq tag (html-check-frag-search-for-tag nil 'noErr 'back)))
 		      (when html-check-frag-debug
 			(push (list 'found-tag :tag tag :stack-open stack-open :stack-close stack-close) html-check-frag-debug))
 		      (html-check-frag-unless-void tag
@@ -331,7 +331,7 @@ This mouse event actually runs `html-check-frag-next'."
     (remove-overlays (point-min) (point-max) 'face 'html-check-frag-error-face)
     (jit-lock-unregister 'html-check-frag-region)
     (setq-local html-check-frag-err nil)
-    (unintern 'html-search-for-tag-syntax obarray)))
+    (unintern 'html-check-frag-search-for-tag-syntax obarray)))
 
 (provide 'html-check-frag)
 ;;; html-check-frag.el ends here
