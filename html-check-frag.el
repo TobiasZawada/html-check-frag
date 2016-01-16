@@ -60,6 +60,11 @@ You should look at (reverse html-check-frag-debug).")
   "Void tags not needed to be marked as <.../>.
 Note, everything should be lower case here. Even !DOCTYPE should actually be !doctpype in this list.")
 
+;; Only defined buffer-locally when html-check-frag-mode is really used:
+(defvar html-check-frag-search-for-tag-syntax)
+(defvar html-check-frag-lighter)
+(defvar html-check-frag-err)
+
 (defun html-check-frag-invalid-context-p (&optional pos)
   "Return non-nil if point is inside string comment or the character at point is quoted."
   (save-excursion
