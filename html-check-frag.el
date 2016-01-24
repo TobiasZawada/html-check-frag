@@ -83,83 +83,84 @@ point is at the end of tag (i.e., at >).  Comments, quoted
 characters and strings are ignored. BOUND and NOERROR have
 the (almost) the same meaning as for
 `search-forward'. BACKWARD determines the search direction."
-  (interactive)
   (declare (special html-check-frag-search-for-tag-syntax))
-  (when html-check-frag-debug
-    (push (list 'search :args (list bound noerror backward) :point (point)) html-check-frag-debug))
-  (let (type
-	beg
-	end
-	opens ;;
-	closes ;;
-	parserState
-	attrList
-	name
-	void
-	found ;; temporary
-	value ;; temporary
-	(re "\\(?:<\\(/\\)?\\([[:alpha:]!?][[:alnum:]]*\\)\\|\\(>\\)\\)")
-	)
-    (with-syntax-table (or (and (boundp 'html-check-frag-search-for-tag-syntax) (syntax-table-p html-check-frag-search-for-tag-syntax) html-check-frag-search-for-tag-syntax)
-			   (prog1
-			       (setq-local html-check-frag-search-for-tag-syntax (copy-syntax-table))
-			     (modify-syntax-entry ?< "(>" html-check-frag-search-for-tag-syntax)
-			     (modify-syntax-entry ?> ")<" html-check-frag-search-for-tag-syntax)
-			     (modify-syntax-entry ?= "." html-check-frag-search-for-tag-syntax) ;; for parsing attributes
-			     ))
-      (while (and (setq beg (apply (if backward 're-search-backward 're-search-forward) (list re bound noerror)))
-		  (setq beg (match-beginning 0))
-		  (html-check-frag-invalid-context-p beg)))
-      (when (and beg (match-beginning 3));; point is actually in the middle of a tag
-	(goto-char (match-end 3))
-	(condition-case err
-	    (progn (backward-sexp)
-		   (setq beg (point)))
-	  (scan-error (setq beg nil)))
-	(unless (and beg (looking-at re))
-	  (put 'error-html-tag 'error-conditions '(error error-html))
-	  (put 'error-html-tag 'error-message "Error during html fragment check")
-	  (signal 'error-html-tag (list "Lonely > at:" (match-beginning 3)))))
-      (when beg ;; matching head tag found
-	(if (match-string 1)
-	    (setq closes t)
-	  (setq opens t))
-	(setq type (match-string-no-properties 2))
-	(goto-char beg)
-	(condition-case err
-	    (forward-sexp)
-	  (error
-	   (put 'error-html-tag 'error-conditions '(error error-html))
-	   (put 'error-html-tag 'error-message "Error during html fragment check")
-	   (signal 'error-html-tag (list "Lonely < at:" (match-beginning 0)))))
-	(setq end (point))
-	(when (= (char-after (- end 2)) ?/)
-	  (setq closes t))
-	;; look for attributes:
-	(goto-char beg)
-	(while (setq found (search-forward "=" end 'noErr))
-	  (when (null (and (setq parserState (syntax-ppss))
-			   (or (nth 3 parserState) ;; inside string
-			       (nth 5 parserState)))) ;; quoted
-	    (backward-sexp)
-	    (setq name (sexp-at-point))
-	    (goto-char found)
-	    (skip-syntax-forward " " end)
-	    (setq value (buffer-substring-no-properties
-			 (if (looking-at "\"")
-			     (1+ (point))
-			   (point))
-			 (save-excursion (forward-sexp)
-					 (if (looking-back "\"")
-					     (1- (point))
-					   (point)))))
-	    (setq attrList (cons (cons name value)  attrList))))
-	(goto-char (if backward beg end))
-	(list :type type
-	      :beg beg :end end
-	      :attrList attrList
-	      :opens opens
-	      :closes closes)))))
+  (interactive)
+  (let (forward-sexp-function)
+    (when html-check-frag-debug
+      (push (list 'search :args (list bound noerror backward) :point (point)) html-check-frag-debug))
+    (let (type
+	  beg
+	  end
+	  opens ;;
+	  closes ;;
+	  parserState
+	  attrList
+	  name
+	  void
+	  found ;; temporary
+	  value ;; temporary
+	  (re "\\(?:<\\(/\\)?\\([[:alpha:]!?][[:alnum:]]*\\)\\|\\(>\\)\\)")
+	  )
+      (with-syntax-table (or (and (boundp 'html-check-frag-search-for-tag-syntax) (syntax-table-p html-check-frag-search-for-tag-syntax) html-check-frag-search-for-tag-syntax)
+			     (prog1
+				 (setq-local html-check-frag-search-for-tag-syntax (copy-syntax-table))
+			       (modify-syntax-entry ?< "(>" html-check-frag-search-for-tag-syntax)
+			       (modify-syntax-entry ?> ")<" html-check-frag-search-for-tag-syntax)
+			       (modify-syntax-entry ?= "." html-check-frag-search-for-tag-syntax) ;; for parsing attributes
+			       ))
+	(while (and (setq beg (apply (if backward 're-search-backward 're-search-forward) (list re bound noerror)))
+		    (setq beg (match-beginning 0))
+		    (html-check-frag-invalid-context-p beg)))
+	(when (and beg (match-beginning 3));; point is actually in the middle of a tag
+	  (goto-char (match-end 3))
+	  (condition-case err
+	      (progn (backward-sexp)
+		     (setq beg (point)))
+	    (scan-error (setq beg nil)))
+	  (unless (and beg (looking-at re))
+	    (put 'error-html-tag 'error-conditions '(error error-html))
+	    (put 'error-html-tag 'error-message "Error during html fragment check")
+	    (signal 'error-html-tag (list "Lonely > at:" (match-beginning 3)))))
+	(when beg ;; matching head tag found
+	  (if (match-string 1)
+	      (setq closes t)
+	    (setq opens t))
+	  (setq type (match-string-no-properties 2))
+	  (goto-char beg)
+	  (condition-case err
+	      (forward-sexp)
+	    (error
+	     (put 'error-html-tag 'error-conditions '(error error-html))
+	     (put 'error-html-tag 'error-message "Error during html fragment check")
+	     (signal 'error-html-tag (list "Lonely < at:" (match-beginning 0)))))
+	  (setq end (point))
+	  (when (= (char-after (- end 2)) ?/)
+	    (setq closes t))
+	  ;; look for attributes:
+	  (goto-char beg)
+	  (while (setq found (search-forward "=" end 'noErr))
+	    (when (null (and (setq parserState (syntax-ppss))
+			     (or (nth 3 parserState) ;; inside string
+				 (nth 5 parserState)))) ;; quoted
+	      (backward-sexp)
+	      (setq name (sexp-at-point))
+	      (goto-char found)
+	      (skip-syntax-forward " " end)
+	      (setq value (buffer-substring-no-properties
+			   (if (looking-at "\"")
+			       (1+ (point))
+			     (point))
+			   (save-excursion (forward-sexp)
+					   (if (looking-back "\"")
+					       (1- (point))
+					     (point)))))
+	      (setq attrList (cons (cons name value)  attrList))))
+	  (goto-char (if backward beg end))
+	  (list :type type
+		:beg beg :end end
+		:attrList attrList
+		:opens opens
+		:closes closes))))))
 
 (defmacro html-check-frag-unless-void (tag &rest body)
   "Eval forms if tag is not a void tag.
@@ -174,8 +175,8 @@ the (almost) the same meaning as for
 
 (defun html-check-frag-region (&optional b e)
   "Check for invalid tags."
-  (interactive)
   (declare (special html-check-frag-lighter html-check-frag-err))
+  (interactive)
   (unless (and b e)
     (if (and (called-interactively-p 'any) (use-region-p))
 	(setq b (region-beginning)
@@ -216,24 +217,24 @@ the (almost) the same meaning as for
 		    (when (< (plist-get tag :beg) b)
 		      (setq b (plist-get tag :beg)))
 		    (html-check-frag-unless-void tag
-		     (if (plist-get tag :opens)
-			 (unless (plist-get tag :closes)
-			   (push tag stack-open)
-			   (when  html-check-frag-debug
-			     (push (list 'pushed-tag :stack-open stack-open) html-check-frag-debug)))
-		       ;; closing
-		       (if stack-open
-			   (progn
-			     (setq tag-from-stack (pop stack-open))
-			     (unless (string= (plist-get tag :type) (plist-get tag-from-stack :type))
-			       (when html-check-frag-debug
-				 (push (list 'mismatch :tag tag :tag-from-stack tag-from-stack) html-check-frag-debug))
-			       (deco-err 'mismatch tag)
-			       (deco-err 'mismatch tag-from-stack)))
-			 (push tag stack-close)
-			 (when html-check-frag-debug
-			   (push (list 'pushed-tag :stack-close stack-close) html-check-frag-debug))
-			 ))))
+		      (if (plist-get tag :opens)
+			  (unless (plist-get tag :closes)
+			    (push tag stack-open)
+			    (when  html-check-frag-debug
+			      (push (list 'pushed-tag :stack-open stack-open) html-check-frag-debug)))
+			;; closing
+			(if stack-open
+			    (progn
+			      (setq tag-from-stack (pop stack-open))
+			      (unless (string= (plist-get tag :type) (plist-get tag-from-stack :type))
+				(when html-check-frag-debug
+				  (push (list 'mismatch :tag tag :tag-from-stack tag-from-stack) html-check-frag-debug))
+				(deco-err 'mismatch tag)
+				(deco-err 'mismatch tag-from-stack)))
+			  (push tag stack-close)
+			  (when html-check-frag-debug
+			    (push (list 'pushed-tag :stack-close stack-close) html-check-frag-debug))
+			  ))))
 		  (when html-check-frag-debug
 		    (push (append (list 'after-open :stack-close stack-close) (when stack-open (list :stack-open stack-open))) html-check-frag-debug))
 		  (when stack-open
@@ -250,19 +251,19 @@ the (almost) the same meaning as for
 		      (when html-check-frag-debug
 			(push (list 'found-tag :tag tag :stack-open stack-open :stack-close stack-close) html-check-frag-debug))
 		      (html-check-frag-unless-void tag
-		       (if (plist-get tag :closes)
-			   (unless (plist-get tag :opens)
-			     (push tag stack-close)
-			     (when html-check-frag-debug
-			       (push (list 'pushed-tag :stack-close stack-close) html-check-frag-debug)))
-			 ;; matching opening tag
-			 (setq tag-from-stack (pop stack-close))
-			 (unless (string= (plist-get tag :type) (plist-get tag-from-stack :type))
-			   (when html-check-frag-debug
-			     (push (list 'mismatch :tag tag :tag-from-stack tag-from-stack) html-check-frag-debug))
-			   (deco-err 'mismatch tag)
-			   (deco-err 'mismatch tag-from-stack))
-			 ))))
+			(if (plist-get tag :closes)
+			    (unless (plist-get tag :opens)
+			      (push tag stack-close)
+			      (when html-check-frag-debug
+				(push (list 'pushed-tag :stack-close stack-close) html-check-frag-debug)))
+			  ;; matching opening tag
+			  (setq tag-from-stack (pop stack-close))
+			  (unless (string= (plist-get tag :type) (plist-get tag-from-stack :type))
+			    (when html-check-frag-debug
+			      (push (list 'mismatch :tag tag :tag-from-stack tag-from-stack) html-check-frag-debug))
+			    (deco-err 'mismatch tag)
+			    (deco-err 'mismatch tag-from-stack))
+			  ))))
 		  (if html-check-frag-err
 		      (setq-local html-check-frag-lighter  (concat " " (upcase (symbol-name (plist-get html-check-frag-err :type)))))
 		    (setq-local html-check-frag-lighter "")))
