@@ -151,7 +151,7 @@ the (almost) the same meaning as for
 			       (1+ (point))
 			     (point))
 			   (save-excursion (forward-sexp)
-					   (if (looking-back "\"")
+					   (if (looking-back "\"" nil)
 					       (1- (point))
 					     (point)))))
 	      (setq attrList (cons (cons name value)  attrList))))
