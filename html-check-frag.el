@@ -39,6 +39,10 @@
 ;;
 ;; (add-hook 'html-mode-hook (lambda () (html-check-frag-mode 1)))
 ;;
+;;; Changes:
+;; 2016-01-31: Bug report from ReneFroger: `html-check-frag-mode' not working with `web-mode'
+;; Solution: Bind `forward-sexp-function' to nil in `html-check-frag-search-for-tag'. This does not effect `html-mode' since there the mode-local `forward-sexp-function' is nil.
+;; 
 ;;; Code:
 
 (require 'cl-lib)
