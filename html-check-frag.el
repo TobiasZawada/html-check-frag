@@ -104,6 +104,7 @@ the (almost) the same meaning as for
 	  found ;; temporary
 	  value ;; temporary
 	  (re "\\(?:<\\(/\\)?\\([[:alpha:]!?][[:alnum:]]*\\)\\|\\(>\\)\\)")
+	  parse-sexp-lookup-properties ;; ignore `syntax-table' properties on mismatched ?< and ?> set by mhtml-mode
 	  )
       (with-syntax-table (or (and (boundp 'html-check-frag-search-for-tag-syntax) (syntax-table-p html-check-frag-search-for-tag-syntax) html-check-frag-search-for-tag-syntax)
 			     (prog1
